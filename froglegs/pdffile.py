@@ -1,7 +1,9 @@
 import os
 
-from pydantic import BaseModel, ConfigDict, Field
+from pathlib import Path
 from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PDFFile(BaseModel):
@@ -38,3 +40,20 @@ class PDFFile(BaseModel):
             raise FileNotFoundError(f"Filepath {path} does not exist.")
         elif not os.path.isfile(path):
             raise IsADirectoryError(f"Filepath {path} is not a file.")
+
+
+def add_directory(directory: str):
+    """
+    Recursively adds all PDF files in the specified directory to a list
+    of PDFFile objects.
+    """
+
+    files = []
+
+    for file in Path(directory).rglob("*.pdf"):
+        if not file.is_file():
+            continue
+
+        files.append(PDFFile(filepath=str(file)))
+
+    return files
