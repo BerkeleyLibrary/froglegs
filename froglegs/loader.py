@@ -14,28 +14,37 @@ from pdffile import PDFFile
 
 app = typer.Typer()
 
+
 def _enumerate_filepaths(filepaths: List[str], recurse: bool) -> List[PDFFile]:
     """
-    Take a list of filepaths and transform it into a list of File objects, optionally recursing into each of them.
+    Take a list of filepaths and transform it into a list of File objects,
+    optionally recursing into each of them.
 
     Args:
         filepaths (List[str]): a list of files or paths for loading
         recurse (bool): whether to recurse into each given filepath
 
     Returns:
-        List[PDFFile]: A list of File objects representing the files extracted from all filepaths.
-    
+        List[PDFFile]: A list of File objects representing the files extracted
+        from all filepaths.
+
     Raises:
         FileNotFoundError: If a filepath does not exist.
-        IsADirectoryError: If recurse is False and a filepath points to a directory instead of a file.
+        IsADirectoryError: If recurse is False and a filepath points to a
+        directory instead of a file.
     """
     if not recurse:
         return [PDFFile(filepath=filepath) for filepath in filepaths]
 
     files = []
     for fp in filepaths:
-        files.extend(_enumerate_filepaths(fp, recurse) if Path(fp).is_dir() else [PDFFile(filepath=fp)])
+        files.extend(
+            _enumerate_filepaths(fp, recurse)
+            if Path(fp).is_dir()
+            else [PDFFile(filepath=fp)]
+        )
     return files
+
 
 @app.command()
 def main(
@@ -49,8 +58,8 @@ def main(
     ),
     embedding_model: Optional[str] = typer.Option(
         default="nomic-embed-text",
-        help="Embedding model to use to generate vector embeddings."
-    )
+        help="Embedding model to use to generate vector embeddings.",
+    ),
 ):
     """
     Process a set of PDF files.
@@ -68,11 +77,11 @@ def main(
         TextColumn("[progress.description]{task.description}"),
         transient=True,
     ) as progress:
-        progress.add_task(description="Loading %s..." % filepaths[0], total=None)
-        loader = PyPDFLoader(filepaths[0]) # hack :/
+        progress.add_task(description=f"Loading {filepaths[0]}…", total=None)
+        loader = PyPDFLoader(filepaths[0])  # hack :/
         docs = loader.load()
 
-        progress.add_task(description="Chunking %s..." % filepaths[0], total=None)
+        progress.add_task(description=f"Chunking {filepaths[0]}…", total=None)
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000, chunk_overlap=200, add_start_index=True
         )
@@ -84,7 +93,7 @@ def main(
         rich.print(f"Generating vectors of length {len(vector_1)}.")
 
         progress.add_task(description="Storing vectors ...", total=None)
-        ids = vector_store.add_documents(documents=all_splits)
+        vector_store.add_documents(documents=all_splits)
 
     query = typer.prompt("What's your question?")
     query_vector = embeddings.embed_query(query)
@@ -92,6 +101,7 @@ def main(
 
     for result in results:
         rich.print(result)
+
 
 if __name__ == "__main__":
     app()

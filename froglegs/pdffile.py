@@ -3,6 +3,7 @@ import os
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 
+
 class PDFFile(BaseModel):
     """
     Represents a PDF file with properties, metadata, etc. for processing
@@ -18,7 +19,7 @@ class PDFFile(BaseModel):
     )
 
     filepath: str = Field(..., exclude=True)
-    tind_id: Optional[str] = Field(default= None)
+    tind_id: Optional[str] = Field(default=None)
 
     @staticmethod
     def _validate_filepath(path):
@@ -30,7 +31,8 @@ class PDFFile(BaseModel):
 
         Raises:
             FileNotFoundError: If the filepath does not exist.
-            IsADirectoryError: If the filepath points to a directory instead of a file.
+            IsADirectoryError: If the filepath points to a directory instead
+                               of a file.
         """
         if not os.path.exists(path):
             raise FileNotFoundError(f"Filepath {path} does not exist.")

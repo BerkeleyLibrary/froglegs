@@ -12,6 +12,8 @@ pydantic = "*"
 langchain-ollama = "*"
 
 [dev-packages]
+flake8 = "*"
+black = "*"
 
 [requires]
 python_version = "3.13"
