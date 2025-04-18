@@ -71,8 +71,7 @@ def main(
         help="A list of filepaths to load.",
     ),
     display_prompt: Optional[bool] = typer.Option(
-        default=False,
-        help="Print the prompt used before returning the answer."
+        default=False, help="Print prompt used before returning the answer."
     ),
     recurse: Optional[bool] = typer.Option(
         default=False,
@@ -144,13 +143,10 @@ def main(
                     advance=0.3,
                 )
                 if total == 0:
-                    vector_1 = embeddings.embed_query(
-                        all_splits[0].page_content
-                    )
-                    v = len(vector_1)
+                    _ = embeddings.embed_query(all_splits[0].page_content)
                     rich.print(
-                        ":abacus: Generating vectors of length",
-                        f"{v} using [yellow]{embedding_model}[/yellow].",
+                        f":abacus: Generating vectors of length {len(_)}",
+                        f"using [yellow]{embedding_model}[/yellow]."
                     )
 
                 progress.update(
@@ -172,18 +168,17 @@ def main(
             rich.print(
                 ":mega: [bold blue]Prompt:[/bold blue]",
                 f"[blue]{display}[/blue]",
-                )
+            )
         query = Prompt.ask(USER_PROMPT)
         query_vector = embeddings.embed_query(query)
         retrieved_docs = vector_store.similarity_search_by_vector(query_vector)
         context = "\n\n".join(doc.page_content for doc in retrieved_docs)
         prompt = PROMPT.invoke({"question": query, "context": context})
+        result = llm.invoke(prompt)
         rich.print(
             ":information_desk_person: [bold cyan]Result:[/bold cyan]",
             f"[cyan]{textwrap.fill(
-                llm.invoke(prompt),
-                width=67,
-                subsequent_indent='   '
+                result, width=67, subsequent_indent='   '
             )}[/cyan]",
         )
 
