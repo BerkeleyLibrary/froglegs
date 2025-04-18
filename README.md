@@ -38,17 +38,19 @@ $ python froglegs/poc.py papers \
     --generator-model=llama3.2
 ```
 
-### Sample results
+## Demo time!
 
-```bash
+![a terminal session demo](demo.gif)
+
+```
 $ python froglegs/poc.py avram.pdf # https://doi.org/10.14746/b.2023.27.8
-froglegs 🐸 | using nomic-embed-text & phi4-mini
+🐸 froglegs | using nomic-embed-text & phi4-mini
 🧮 Generating vectors of length 768 using nomic-embed-text.
 parsing for Object Streams
 🧩 Parsed 1 files into 82 chunks.
 💁 phi4-mini is ready.
-What's your question?: Jaką rolę odegrała Henrietta Avram w tworzeniu formatu MARC?
-📓 Result:
+🗣️ What's your question?: Jaką rolę odegrała Henrietta Avram w tworzeniu formatu MARC?
+💁 Result:
 Henrietta Avram zainspirowała tworzenie formatu MARC w latach 1961-1976. Była 
 odpowiedzialna za opracowanie architektury cyfrowego zapisu danych 
 bibliograficznych i wdrażanie rozbudowanej wersji MARC II między 1965 a 2006,
