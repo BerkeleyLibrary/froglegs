@@ -1,3 +1,6 @@
+import re
+import textwrap
+
 import rich
 import typer
 
@@ -10,6 +13,7 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_ollama import OllamaEmbeddings, OllamaLLM
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.prompt import Prompt
 
 from pdffile import PDFFile, add_directory
 
@@ -25,6 +29,8 @@ PROMPT = PromptTemplate.from_template(
     Answer:
     """
 )
+
+USER_PROMPT = ":speaking_head: [magenta] What's your question?[/magenta]"
 
 app = typer.Typer()
 
@@ -53,9 +59,7 @@ def _enumerate_filepaths(filepaths: List[str], recurse: bool) -> List[PDFFile]:
     files = []
     for fp in filepaths:
         files.extend(
-            add_directory(fp)
-            if Path(fp).is_dir()
-            else [PDFFile(filepath=fp)]
+            add_directory(fp) if Path(fp).is_dir() else [PDFFile(filepath=fp)]
         )
     return files
 
@@ -65,6 +69,10 @@ def main(
     filepaths: Optional[List[str]] = typer.Argument(
         default=None,
         help="A list of filepaths to load.",
+    ),
+    display_prompt: Optional[bool] = typer.Option(
+        default=False,
+        help="Print the prompt used before returning the answer."
     ),
     recurse: Optional[bool] = typer.Option(
         default=False,
@@ -86,7 +94,7 @@ def main(
     llm = OllamaLLM(model=generator_model)
 
     rich.print(
-        "[green]frog[/green][bold yellow]legs[/bold yellow] :frog:",
+        ":frog: [green]frog[/green][bold yellow]legs[/bold yellow]",
         f"| using [yellow]{embedding_model}[/yellow]",
         f"& [magenta]{generator_model}[/magenta]",
     )
@@ -142,7 +150,7 @@ def main(
                     v = len(vector_1)
                     rich.print(
                         ":abacus: Generating vectors of length",
-                        f"{v} using [yellow]{embedding_model}[/yellow]."
+                        f"{v} using [yellow]{embedding_model}[/yellow].",
                     )
 
                 progress.update(
@@ -154,22 +162,33 @@ def main(
                 total += 1
 
         rich.print(
-            f":jigsaw: Parsed {total} files into {total_chunks} chunks."
-        )
-        rich.print(
-            f":information_desk_person: [magenta]{generator_model}[/magenta]",
-            "is ready."
+            f":jigsaw: Parsed {total} files into {total_chunks}",
+            "chunks.\n:information_desk_person:",
+            f"[magenta]{generator_model}[/magenta] is ready.",
         )
 
-        query = typer.prompt("What's your question?")
+        if display_prompt:
+            display = re.sub(r" {4}", "   ", PROMPT.template.strip())
+            rich.print(
+                ":mega: [bold blue]Prompt:[/bold blue]",
+                f"[blue]{display}[/blue]",
+                )
+        query = Prompt.ask(USER_PROMPT)
         query_vector = embeddings.embed_query(query)
         retrieved_docs = vector_store.similarity_search_by_vector(query_vector)
         context = "\n\n".join(doc.page_content for doc in retrieved_docs)
         prompt = PROMPT.invoke({"question": query, "context": context})
-        rich.print(f":notebook: Result:\n{llm.invoke(prompt)}")
+        rich.print(
+            ":information_desk_person: [bold cyan]Result:[/bold cyan]",
+            f"[cyan]{textwrap.fill(
+                llm.invoke(prompt),
+                width=67,
+                subsequent_indent='   '
+            )}[/cyan]",
+        )
 
     else:
-        rich.print(f":stop_sign: Parsed {0} files. Nothing to do!")
+        rich.print(f":stop_sign: [red]Nothing to do! {0} files given.[/red]")
 
 
 if __name__ == "__main__":
