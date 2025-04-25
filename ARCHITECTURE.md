@@ -1,37 +1,82 @@
+# Architecure
+
+Proof of concept for fuller implementation.
+
 ```mermaid
-architecture-beta
-    group tind(logos:aws)[tind]
+---
+config:
+  theme: base
+---
+block-beta
+    columns 5
 
-    service disk1(logos:aws-s3)[Storage] in tind
-    service app(logos:aws-ec2)[TIND webapp] in tind
-    junction junctionTind in tind
-
-    disk1:L -- R:junctionTind
-    junctionTind:L -- R:app
-    junction junctionExt
-    group froglegs(logos:python)[froglegs]
-    group pipeline(logos:airflow-icon)[Data Pipeline] in froglegs
-    junction junctionTop in froglegs
+    legend["Yellow: Frontend\nGreen: Common\nBlue: Data Pipeline (Backend)"]
+    ui["UI layer\n(e.g. chainlit)"]:3
+    evaluation["Evaluation framework\n(e.g. ragas)"]
     
-    service queue(logos:airflow-icon)[Workflow Manager] in pipeline
-    service harvester(logos:python)[Harvester] in pipeline
-    service docprocessor(logos:python)[DocProcessor] in pipeline
-    service vectordb(logos:qdrant-icon)[Vector Database] in froglegs
-    service embedding(logos:mistral-ai-icon)[Embedding Model] in froglegs
+    space:5
     
-    service llm(logos:mistral-ai-icon)[Language Model] in froglegs
-    service ui(logos:python)[Chat UI] in froglegs
+    client["TIND API client\n(requests)"]
+    framework["AI framework\n(langchain)"]:3
+    orm["ORM\n(sqlalchemy or prisma)"]
+    
+    space:5
+    
+    tind["TIND"]    
+    lm[["Language\nmodel"]]
+    embedding[["Embedding\nmodel"]]
+    vectordb[("Vector database \n(opensearch, weaviate, \nor qdrant)")]
+    db[("Chat history/evaluation \n(postgresql)")]
 
+    space:5
 
-    queue:T --> B:harvester
-    harvester:R --> L:docprocessor
-    docprocessor:R -- L:junctionTop
-    junctionTop:R --> L:vectordb
-    junctionTop:B --> T:embedding
-    ui:R --> L:llm
-    ui:T --> B:vectordb
-    ui:L --> R:embedding    
-    ui:B --> T:junctionTind{group}
-    app{group}:L -- R:junctionExt
-    junctionExt:T --> B:queue{group}
+    space
+    harvester["TIND Harvester\n(gets metadata and files)"]
+    space
+    docprocessor["Document processor\n(processes PDFs and chunks text)"]
+    space
+
+    space:5
+
+    space
+    workflow["Workflow orchestrator\n(airflow)"]:3
+    space
+
+    workflow --> harvester
+    workflow --> docprocessor 
+    framework-->embedding
+    framework-->vectordb
+    vectordb -->framework
+    framework --> workflow
+    docprocessor --> vectordb
+    docprocessor --> embedding
+    embedding --> framework
+    harvester -->client
+    client--> tind
+    tind --> client
+    client --> harvester
+    embedding--> docprocessor
+    evaluation-->framework
+    framework-->ui
+    ui --> orm
+    orm--> ui
+    ui --> framework
+    orm --> db
+    db-->orm
+    ui --> client
+    client --> ui
+    framework --> lm
+    lm --> framework
+    framework-->evaluation
+
+    classDef fe fill: lightyellow
+    class ui,evaluation,orm,lm,db fe
+
+    classDef common fill: lightgreen
+    class vectordb,framework,embedding,tind,client common
+
+    classDef be fill: lightblue
+    class harvester,docprocessor,workflow be
+
+    style legend fill: white, stroke: white
 ```
